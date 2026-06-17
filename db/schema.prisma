@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  team   Team?  @relation(fields: [teamId], references: [id])
+  teamId String?
+
+  @@map("users")
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users          User[]
+  apiConnections ApiConnection[]
+  usageRecords   UsageRecord[]
+
+  @@map("teams")
+}
+
+// Stores the customer's OpenAI API key (encrypted)
+model ApiConnection {
+  id           String   @id @default(uuid())
+  teamId       String
+  provider     String   @default("openai")
+  encryptedKey String
+  lastSyncAt   DateTime?
+  syncStatus   String   @default("pending") // pending | syncing | done | error
+  syncError    String?
+  createdAt    DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, provider])
+  @@map("api_connections")
+}
+
+// One row per day per model — aggregated from OpenAI usage API
+model UsageRecord {
+  id           String   @id @default(uuid())
+  teamId       String
+  date         DateTime // day only (YYYY-MM-DD)
+  model        String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  totalTokens  Int      @default(0)
+  requestCount Int      @default(0)
+  cost         Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  // Prevent duplicates on re-sync
+  @@unique([teamId, date, model])
+  @@index([teamId, date])
+  @@map("usage_records")
+}
