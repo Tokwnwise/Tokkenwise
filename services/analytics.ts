@@ -33,10 +33,9 @@ export async function getAnalytics(teamId: string, days = 30): Promise<Analytics
   }
 
   // Totals
-  const totalSpend    = records.reduce((s, r) => s + r.cost, 0)
-  const totalRequests = records.reduce((s, r) => s + r.requestCount, 0)
-  const totalTokens   = records.reduce((s, r) => s + r.totalTokens, 0)
-
+ const totalSpend    = records.reduce((s: number, r) => s + r.cost, 0)
+const totalRequests = records.reduce((s: number, r) => s + r.requestCount, 0)
+const totalTokens   = records.reduce((s: number, r) => s + r.totalTokens, 0)
   // Daily trend
   const dayMap = new Map<string, DaySpend>()
   for (const r of records) {
